@@ -1,0 +1,323 @@
+-- Serviços
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+-- Variáveis
+local baseActive, basePart = false
+local destroyMode = false
+local verticalSpeed = 1
+local offset = Vector3.new(0, -3, 0)
+local guiVisible = true
+local chamsActive = false
+local chamsColor = Color3.fromRGB(255,0,0)
+local chamsFolder = Instance.new("Folder")
+chamsFolder.Name = "Chams"
+chamsFolder.Parent = workspace
+
+-- Criar base
+local function createBase()
+    if basePart then return end
+    local char = player.Character or player.CharacterAdded:Wait()
+    local root = char:WaitForChild("HumanoidRootPart")
+
+    basePart = Instance.new("Part")
+    basePart.Size = Vector3.new(6,1,6)
+    basePart.Anchored = true
+    basePart.CanCollide = true
+    basePart.Material = Enum.Material.Neon
+    basePart.Color = Color3.fromRGB(0,0,0)
+    basePart.Parent = workspace
+
+    local gui = Instance.new("SurfaceGui", basePart)
+    gui.Face = Enum.NormalId.Top
+    gui.AlwaysOnTop = true
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(1,0,1,0)
+    frame.BackgroundTransparency = 1
+    local gradient = Instance.new("UIGradient", frame)
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,Color3.fromRGB(128,0,128)),
+        ColorSequenceKeypoint.new(1,Color3.fromRGB(0,0,0))
+    })
+    gradient.Rotation = 90
+
+    basePart.Position = root.Position + offset
+end
+
+-- Atualizar base
+local function updateBase()
+    local char = player.Character
+    if basePart and char then
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root then
+            local targetX, targetZ = root.Position.X, root.Position.Z
+            local targetY = root.Position.Y + offset.Y
+            local currentY = basePart.Position.Y
+            local newY = targetY > currentY and currentY + (targetY - currentY)*(verticalSpeed/5) or currentY
+            basePart.Position = Vector3.new(targetX,newY,targetZ)
+        end
+    end
+end
+
+-- Criar Chams
+local function updateChams()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local char = plr.Character
+            if char then
+                for _, part in pairs(char:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        if chamsActive then
+                            if not part:FindFirstChild("Cham") then
+                                local highlight = Instance.new("BoxHandleAdornment")
+                                highlight.Name = "Cham"
+                                highlight.Adornee = part
+                                highlight.Size = part.Size + Vector3.new(0.1,0.1,0.1)
+                                highlight.Color3 = chamsColor
+                                highlight.AlwaysOnTop = true
+                                highlight.ZIndex = 10
+                                highlight.Parent = chamsFolder
+                            end
+                        else
+                            if part:FindFirstChild("Cham") then
+                                part.Cham:Destroy()
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Criar GUI
+local function createGUI()
+    if player.PlayerGui:FindFirstChild("Cardosoz Hub") then return end
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "Cardosoz Hub"
+    gui.Parent = player:WaitForChild("PlayerGui")
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 250, 0, 250)
+    frame.Position = UDim2.new(1, -260, 0.5, -125)
+    frame.BackgroundColor3 = Color3.fromRGB(75,0,130)
+    frame.BorderSizePixel = 0
+    frame.Parent = gui
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
+
+    local title = Instance.new("TextLabel", frame)
+    title.Size = UDim2.new(1, -20, 0, 30)
+    title.Position = UDim2.new(0,10,0,5)
+    title.BackgroundTransparency = 1
+    title.Text = "Cardosoz Hub"
+    title.TextColor3 = Color3.fromRGB(255,255,255)
+    title.TextScaled = true
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Font = Enum.Font.GothamBold
+
+    -- Tabs
+    local mainTabBtn = Instance.new("TextButton", frame)
+    mainTabBtn.Size = UDim2.new(0.5, -10, 0, 25)
+    mainTabBtn.Position = UDim2.new(0,5,0,40)
+    mainTabBtn.Text = "Main"
+    mainTabBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    mainTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", mainTabBtn).CornerRadius = UDim.new(0,6)
+
+    local miscTabBtn = Instance.new("TextButton", frame)
+    miscTabBtn.Size = UDim2.new(0.5, -10, 0, 25)
+    miscTabBtn.Position = UDim2.new(0.5, 0,0,40)
+    miscTabBtn.Text = "Misc"
+    miscTabBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    miscTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", miscTabBtn).CornerRadius = UDim.new(0,6)
+
+    -- Containers
+    local mainContainer = Instance.new("Frame", frame)
+    mainContainer.Size = UDim2.new(1, -10, 1, -75)
+    mainContainer.Position = UDim2.new(0,5,0,70)
+    mainContainer.BackgroundTransparency = 1
+
+    local miscContainer = Instance.new("Frame", frame)
+    miscContainer.Size = UDim2.new(1, -10, 1, -75)
+    miscContainer.Position = UDim2.new(0,5,0,70)
+    miscContainer.BackgroundTransparency = 1
+    miscContainer.Visible = false
+
+    mainTabBtn.MouseButton1Click:Connect(function()
+        mainContainer.Visible = true
+        miscContainer.Visible = false
+    end)
+    miscTabBtn.MouseButton1Click:Connect(function()
+        mainContainer.Visible = false
+        miscContainer.Visible = true
+    end)
+
+    -- Main: Base / Destroy / Velocidade
+    local baseBtn = Instance.new("TextButton", mainContainer)
+    baseBtn.Size = UDim2.new(0,220,0,30)
+    baseBtn.Position = UDim2.new(0,0,0,0)
+    baseBtn.Text = "Ativar Base"
+    baseBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    baseBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", baseBtn).CornerRadius = UDim.new(0,6)
+
+    baseBtn.MouseButton1Click:Connect(function()
+        baseActive = not baseActive
+        if baseActive then
+            createBase()
+            baseBtn.Text = "Desativar Base"
+        else
+            if basePart then basePart:Destroy() end
+            basePart = nil
+            baseBtn.Text = "Ativar Base"
+        end
+    end)
+
+    local destroyBtn = Instance.new("TextButton", mainContainer)
+    destroyBtn.Size = UDim2.new(0,220,0,30)
+    destroyBtn.Position = UDim2.new(0,0,0,35)
+    destroyBtn.Text = "Ativar Modo Destruir"
+    destroyBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    destroyBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", destroyBtn).CornerRadius = UDim.new(0,6)
+
+    destroyBtn.MouseButton1Click:Connect(function()
+        destroyMode = not destroyMode
+        if destroyMode then
+            destroyBtn.Text = "Desativar Modo Destruir"
+            destroyBtn.BackgroundColor3 = Color3.fromRGB(139,0,0)
+        else
+            destroyBtn.Text = "Ativar Modo Destruir"
+            destroyBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+        end
+    end)
+
+    -- Velocidade Y
+    local plusBtn = Instance.new("TextButton", mainContainer)
+    plusBtn.Size = UDim2.new(0,105,0,25)
+    plusBtn.Position = UDim2.new(0,0,0,70)
+    plusBtn.Text = "+ Velocidade Y"
+    plusBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    plusBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", plusBtn).CornerRadius = UDim.new(0,6)
+
+    local minusBtn = Instance.new("TextButton", mainContainer)
+    minusBtn.Size = UDim2.new(0,105,0,25)
+    minusBtn.Position = UDim2.new(0,115,0,70)
+    minusBtn.Text = "- Velocidade Y"
+    minusBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    minusBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", minusBtn).CornerRadius = UDim.new(0,6)
+
+    local speedLabel = Instance.new("TextLabel", mainContainer)
+    speedLabel.Size = UDim2.new(0,220,0,25)
+    speedLabel.Position = UDim2.new(0,0,0,105)
+    speedLabel.BackgroundTransparency = 1
+    speedLabel.TextColor3 = Color3.fromRGB(255,255,255)
+    speedLabel.Font = Enum.Font.GothamBold
+    speedLabel.TextScaled = true
+    speedLabel.Text = "Velocidade Y: "..verticalSpeed
+
+    plusBtn.MouseButton1Click:Connect(function()
+        verticalSpeed = math.clamp(verticalSpeed + 1,1,5)
+        speedLabel.Text = "Velocidade Y: "..verticalSpeed
+    end)
+    minusBtn.MouseButton1Click:Connect(function()
+        verticalSpeed = math.clamp(verticalSpeed - 1,1,5)
+        speedLabel.Text = "Velocidade Y: "..verticalSpeed
+    end)
+
+    -- Misc: Chams
+    local chamsBtn = Instance.new("TextButton", miscContainer)
+    chamsBtn.Size = UDim2.new(0,220,0,30)
+    chamsBtn.Position = UDim2.new(0,0,0,0)
+    chamsBtn.Text = "Ativar Chams"
+    chamsBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    chamsBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    Instance.new("UICorner", chamsBtn).CornerRadius = UDim.new(0,6)
+
+    chamsBtn.MouseButton1Click:Connect(function()
+        chamsActive = not chamsActive
+        if chamsActive then
+            chamsBtn.Text = "Desativar Chams"
+            chamsBtn.BackgroundColor3 = Color3.fromRGB(0,139,0)
+        else
+            chamsBtn.Text = "Ativar Chams"
+            chamsBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+            for _, highlight in pairs(chamsFolder:GetChildren()) do
+                highlight:Destroy()
+            end
+        end
+    end)
+
+    -- Botões de cores
+    local colors = {
+        Color3.fromRGB(255,0,0),
+        Color3.fromRGB(0,255,0),
+        Color3.fromRGB(0,0,255),
+        Color3.fromRGB(255,255,0),
+        Color3.fromRGB(255,0,255)
+    }
+    for i, color in ipairs(colors) do
+        local colorBtn = Instance.new("TextButton", miscContainer)
+        colorBtn.Size = UDim2.new(0,40,0,30)
+        colorBtn.Position = UDim2.new(0,(i-1)*45,0,40)
+        colorBtn.BackgroundColor3 = color
+        colorBtn.Text = ""
+        Instance.new("UICorner", colorBtn).CornerRadius = UDim.new(0,6)
+
+        colorBtn.MouseButton1Click:Connect(function()
+            chamsColor = color
+            for _, highlight in pairs(chamsFolder:GetChildren()) do
+                highlight.Color3 = chamsColor
+            end
+        end)
+    end
+
+    -- Mouse destroy
+    local mouse = player:GetMouse()
+    mouse.Button1Down:Connect(function()
+        if destroyMode then
+            if mouse.Target and mouse.Target:IsDescendantOf(workspace) then
+                mouse.Target:Destroy()
+            end
+        end
+    end)
+
+    -- Botão circular minimizador esquerda
+    local floatBtnGui = Instance.new("ScreenGui")
+    floatBtnGui.Name = "FloatButtonGui"
+    floatBtnGui.Parent = player:WaitForChild("PlayerGui")
+
+    local floatBtn = Instance.new("ImageButton")
+    floatBtn.Size = UDim2.new(0,50,0,50)
+    floatBtn.Position = UDim2.new(0,10,0,100)
+    floatBtn.BackgroundColor3 = Color3.fromRGB(75,0,130)
+    floatBtn.Image = "" -- ID da imagem
+    floatBtn.Parent = floatBtnGui
+    floatBtn.AutoButtonColor = true
+    Instance.new("UICorner", floatBtn).CornerRadius = UDim.new(0,25)
+
+    floatBtn.MouseButton1Click:Connect(function()
+        guiVisible = not guiVisible
+        frame.Visible = guiVisible
+    end)
+
+    -- Atualizações
+    RunService.RenderStepped:Connect(function()
+        if baseActive then updateBase() end
+        if chamsActive then updateChams() end
+    end)
+end
+
+-- Criar GUI
+createGUI()
+
+-- Respawn
+player.CharacterAdded:Connect(function()
+    wait(0.5)
+    createGUI()
+end)
